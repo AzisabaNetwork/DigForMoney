@@ -5,3 +5,6 @@ authors: ["siloneco"]
 description: ${project.description}
 website: ${project.url}
 softdepend: ["Vault"]
+permissions:
+  digformoney.earnmoney:
+    default: true

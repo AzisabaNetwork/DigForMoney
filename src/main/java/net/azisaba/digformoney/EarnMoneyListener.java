@@ -52,15 +52,11 @@ public class EarnMoneyListener implements Listener {
             return;
         }
 
-        if ( isPlacedByPlayer(p, e.getBlock()) ) {
+        if ( isModifiedByPlayer(p, e.getBlock()) ) {
             return;
         }
 
-        if ( breakLocMap.containsKey(p) && breakLocMap.get(p).contains(e.getBlock().getLocation()) ) {
-            return;
-        }
-
-        if ( !p.hasPermission("DigForMoney.earnmoney") ) {
+        if ( !p.hasPermission("digformoney.earnmoney") ) {
             return;
         }
 
@@ -130,7 +126,7 @@ public class EarnMoneyListener implements Listener {
         }
     }
 
-    private boolean isPlacedByPlayer(Player p, Block b) {
+    private boolean isModifiedByPlayer(Player p, Block b) {
         // TODO 砂などの落下するブロックが対策できない
         return placeLocList.contains(b.getLocation()) || breakLocMap.getOrDefault(p, new ArrayList<>()).contains(b.getLocation());
     }
