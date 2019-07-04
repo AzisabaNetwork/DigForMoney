@@ -16,28 +16,28 @@ import net.milkbowl.vault.economy.Economy;
 
 public class ScoreboardDisplayer {
 
-    private Player player;
+    private final Player player;
 
-    private Scoreboard board;
+    private final Scoreboard board;
     private Objective obj = null;
     private Objective obj2 = null;
 
     private int current = 1;
 
-    private List<Double> moneyList = new ArrayList<>();
-    private List<Long> milliList = new ArrayList<>();
+    private final List<Double> moneyList = new ArrayList<>();
+    private final List<Long> milliList = new ArrayList<>();
 
     private long lastUpdate = -1;
 
     public ScoreboardDisplayer(Player player) {
         this.player = player;
 
-        this.board = Bukkit.getScoreboardManager().getNewScoreboard();
-        this.obj = board.registerNewObjective("seichi", "dummy");
-        this.obj2 = board.registerNewObjective("seichi2", "dummy");
+        board = Bukkit.getScoreboardManager().getNewScoreboard();
+        obj = board.registerNewObjective("seichi", "dummy");
+        obj2 = board.registerNewObjective("seichi2", "dummy");
 
-        this.obj.setDisplayName(ChatColor.YELLOW + "掘削ボード");
-        this.obj2.setDisplayName(ChatColor.YELLOW + "掘削ボード");
+        obj.setDisplayName(ChatColor.YELLOW + "掘削ボード");
+        obj2.setDisplayName(ChatColor.YELLOW + "掘削ボード");
 
         updateTask();
     }
@@ -142,7 +142,7 @@ public class ScoreboardDisplayer {
         }
         double balance = econ.getBalance(Bukkit.getOfflinePlayer(player.getUniqueId()));
 
-        obj.getScore(ChatColor.RED + "所持金: " + ((int) balance) + "円").setScore(i + 1);
+        obj.getScore(ChatColor.RED + "所持金: " + (int) balance + "円").setScore(i + 1);
 
         obj.setDisplaySlot(DisplaySlot.SIDEBAR);
     }
@@ -157,6 +157,7 @@ public class ScoreboardDisplayer {
 
     private void updateTask() {
         task = new BukkitRunnable() {
+            @Override
             public void run() {
 
                 if ( lastUpdate + 5000 < System.currentTimeMillis() ) {

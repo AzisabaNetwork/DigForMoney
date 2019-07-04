@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,10 +23,10 @@ public class EarnMoneyListener implements Listener {
 
     private DigForMoney plugin;
 
-    private HashMap<Player, ScoreboardDisplayer> boardMap = new HashMap<Player, ScoreboardDisplayer>();
+    private final HashMap<Player, ScoreboardDisplayer> boardMap = new HashMap<>();
 
-    private List<Location> placeLocList = new ArrayList<>();
-    private HashMap<Player, List<Location>> breakLocMap = new HashMap<>();
+    private final List<Location> placeLocList = new ArrayList<>();
+    private final HashMap<Player, List<Location>> breakLocMap = new HashMap<>();
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
@@ -35,6 +36,11 @@ public class EarnMoneyListener implements Listener {
         }
 
         Player p = e.getPlayer();
+        World world = e.getBlock().getWorld();
+
+        if ( !DigForMoney.getPlugin().getNormalConfig().isEnabledWorld(world) ) {
+            return;
+        }
 
         if ( p.getGameMode() == GameMode.CREATIVE ) {
             return;
@@ -46,7 +52,7 @@ public class EarnMoneyListener implements Listener {
             return;
         }
 
-        if ( isPlacedByPlayer(e.getBlock()) ) {
+        if ( isPlacedByPlayer(p, e.getBlock()) ) {
             return;
         }
 
@@ -79,14 +85,14 @@ public class EarnMoneyListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void addBreakBlock(BlockBreakEvent e) {
 
         if ( !DigForMoney.isEnableEarnMoney() ) {
             return;
         }
 
-        if ( e.isCancelled() ) {
+        if ( !DigForMoney.getPlugin().getNormalConfig().isEnabledWorld(e.getBlock().getWorld()) ) {
             return;
         }
 
@@ -102,18 +108,18 @@ public class EarnMoneyListener implements Listener {
 
             breakLocMap.put(p, locList);
         } else {
-            breakLocMap.put(p, new ArrayList<Location>(Arrays.asList(e.getBlock().getLocation())));
+            breakLocMap.put(p, new ArrayList<>(Arrays.asList(e.getBlock().getLocation())));
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void addPlaceBlock(BlockPlaceEvent e) {
 
         if ( !DigForMoney.isEnableEarnMoney() ) {
             return;
         }
 
-        if ( e.isCancelled() ) {
+        if ( !DigForMoney.getPlugin().getNormalConfig().isEnabledWorld(e.getBlock().getWorld()) ) {
             return;
         }
 
@@ -124,9 +130,9 @@ public class EarnMoneyListener implements Listener {
         }
     }
 
-    private boolean isPlacedByPlayer(Block b) {
+    private boolean isPlacedByPlayer(Player p, Block b) {
         // TODO 砂などの落下するブロックが対策できない
-        return placeLocList.contains(b.getLocation());
+        return placeLocList.contains(b.getLocation()) || breakLocMap.getOrDefault(p, new ArrayList<>()).contains(b.getLocation());
     }
 
     private boolean addMoney(Player p, double value) {

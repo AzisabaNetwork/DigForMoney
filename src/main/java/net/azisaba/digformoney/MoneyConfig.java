@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class MoneyConfig {
 
     private final String fileName = "EarnBlocks.yml";
-    private HashMap<Material, Double> moneyMap = new HashMap<>();
+    private final HashMap<Material, Double> moneyMap = new HashMap<>();
 
     public void load() {
 

@@ -11,6 +11,8 @@ import lombok.Getter;
 public class DigForMoney extends JavaPlugin {
 
     @Getter
+    private NormalConfig normalConfig;
+    @Getter
     private MoneyConfig moneyConfig;
     @Getter
     private static DigForMoney plugin;
@@ -20,13 +22,16 @@ public class DigForMoney extends JavaPlugin {
     @Override
     public void onEnable() {
 
-        // moneyConfigがgetDataFolder()出来なくなるのを防ぐために2回plugin = thisする
+        // moneyConfigとnormalConfigがgetDataFolder()出来なくなるのを防ぐために2回plugin = thisする
         plugin = this;
+
+        normalConfig = new NormalConfig();
+        normalConfig.load();
 
         moneyConfig = new MoneyConfig();
         moneyConfig.load();
 
-        // moneyConfigがgetDataFolder()出来なくなるのを防ぐために2回plugin = thisする
+        // moneyConfigとnormalConfigがgetDataFolder()出来なくなるのを防ぐために2回plugin = thisする
         plugin = this;
 
         Bukkit.getPluginManager().registerEvents(new EarnMoneyListener(), this);
