@@ -1,0 +1,7 @@
+name: ${project.name}
+main: net.azisaba.digformoney.DigForMoney
+version: ${project.version}
+authors: ["siloneco"]
+description: ${project.description}
+website: ${project.url}
+softdepend: ["Vault"]
