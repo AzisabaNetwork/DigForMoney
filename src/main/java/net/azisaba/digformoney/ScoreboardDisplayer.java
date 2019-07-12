@@ -14,6 +14,9 @@ import org.bukkit.scoreboard.Scoreboard;
 import net.md_5.bungee.api.ChatColor;
 import net.milkbowl.vault.economy.Economy;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 public class ScoreboardDisplayer {
 
     private final Player player;
@@ -22,12 +25,9 @@ public class ScoreboardDisplayer {
     private Objective obj = null;
     private Objective obj2 = null;
 
-    private int current = 1;
+    private int currentBoard = 1;
 
-    private final List<Double> moneyList = new ArrayList<>();
-    private final List<Long> milliList = new ArrayList<>();
-
-    private long lastUpdate = -1;
+    private List<MoneyData> dataList = new ArrayList<MoneyData>();
 
     public ScoreboardDisplayer(Player player) {
         this.player = player;
@@ -49,14 +49,14 @@ public class ScoreboardDisplayer {
         }
 
         Objective updateObj = obj;
-        if ( current == 0 ) {
+        if ( currentBoard == 0 ) {
             updateObj = obj2;
         }
 
-        if ( current == 0 ) {
-            current = 1;
+        if ( currentBoard == 0 ) {
+            currentBoard = 1;
         } else {
-            current = 0;
+            currentBoard = 0;
         }
 
         if ( player.getScoreboard() != board ) {
@@ -72,28 +72,29 @@ public class ScoreboardDisplayer {
     }
 
     public void addMoney(double value) {
+        dataList.add(0, new MoneyData(System.currentTimeMillis(), value));
 
-        lastUpdate = System.currentTimeMillis();
+        int count = 0;
 
-        moneyList.add(0, value);
-        milliList.add(0, System.currentTimeMillis());
+        for ( int i = dataList.size() - 1; i > 10 && dataList.get(i).getTime() < DigForMoney.getPlugin().getMoneyAddTask().getLastUpdated(); i-- ) {
+            count++;
+        }
 
-        if ( moneyList.size() >= 50 ) {
-            moneyList.remove(moneyList.size() - 1);
-            milliList.remove(milliList.size() - 1);
+        if ( count > 0 ) {
+            dataList = dataList.subList(0, dataList.size() - count + 1);
         }
     }
 
     public void addError() {
-        lastUpdate = System.currentTimeMillis();
+        dataList.add(0, new MoneyData(System.currentTimeMillis(), -1d));
 
-        moneyList.add(0, -1d);
-        milliList.add(0, System.currentTimeMillis());
+        int count = 0;
 
-        if ( moneyList.size() >= 50 ) {
-            moneyList.remove(moneyList.size() - 1);
-            milliList.remove(milliList.size() - 1);
+        for ( int i = dataList.size() - 1; i > 10 && dataList.get(i).getTime() < DigForMoney.getPlugin().getMoneyAddTask().getLastUpdated(); i-- ) {
+            count++;
         }
+
+        dataList = dataList.subList(0, dataList.size() - count + 1);
     }
 
     private void updateObjective(Objective obj) {
@@ -101,12 +102,13 @@ public class ScoreboardDisplayer {
         resetScores();
 
         int i = 0;
-        for ( ; i < moneyList.size() && i < 10; i++ ) {
+        for ( ; i < dataList.size() && i < 10; i++ ) {
 
-            double value = moneyList.get(i);
-            String str = ChatColor.GREEN + "+" + value + "円";
+            MoneyData data = dataList.get(i);
 
-            if ( value <= -1d ) {
+            String str = ChatColor.GREEN + "+" + data.getValue() + "円";
+
+            if ( data.getValue() <= -1d ) {
                 str = ChatColor.RED + "Error";
             }
 
@@ -127,9 +129,9 @@ public class ScoreboardDisplayer {
 
         double perSecond = 0;
 
-        for ( int i2 = 0; i2 < moneyList.size(); i2++ ) {
-            if ( milliList.get(i2) + 1000 > System.currentTimeMillis() && moneyList.get(i2) > 0 ) {
-                perSecond += moneyList.get(i2);
+        for ( int i2 = 0; i2 < dataList.size(); i2++ ) {
+            if ( dataList.get(i2).getTime() + 1000 > System.currentTimeMillis() && dataList.get(i2).getValue() > 0 ) {
+                perSecond += dataList.get(i2).getValue();
             }
         }
 
@@ -140,7 +142,7 @@ public class ScoreboardDisplayer {
         if ( econ == null ) {
             return;
         }
-        double balance = econ.getBalance(Bukkit.getOfflinePlayer(player.getUniqueId()));
+        double balance = getTotalBalance();
 
         obj.getScore(ChatColor.RED + "所持金: " + (int) balance + "円").setScore(i + 1);
 
@@ -160,14 +162,18 @@ public class ScoreboardDisplayer {
             @Override
             public void run() {
 
-                if ( lastUpdate + 5000 < System.currentTimeMillis() ) {
+                long lastUpdated = 0;
+                if ( dataList.size() > 0 ) {
+                    lastUpdated = dataList.get(0).getTime();
+                }
+
+                if ( lastUpdated + 5000 < System.currentTimeMillis() ) {
 
                     if ( player.getScoreboard() == board ) {
                         player.getScoreboard().clearSlot(DisplaySlot.SIDEBAR);
                     }
 
-                    milliList.clear();
-                    moneyList.clear();
+                    dataList.clear();
                     return;
                 } else {
                     obj.setDisplaySlot(DisplaySlot.SIDEBAR);
@@ -182,5 +188,31 @@ public class ScoreboardDisplayer {
         if ( task != null ) {
             task.cancel();
         }
+    }
+
+    private double getTotalBalance() {
+        Economy econ = DigForMoney.getEconomy();
+
+        if ( econ == null ) {
+            return -1d;
+        }
+
+        double balance = econ.getBalance(Bukkit.getOfflinePlayer(player.getUniqueId()));
+        long lastUpdateTotal = DigForMoney.getPlugin().getMoneyAddTask().getLastUpdated();
+
+        if ( dataList.size() > 0 ) {
+            for ( int i = 0; i < dataList.size() && dataList.get(i).getTime() > lastUpdateTotal; i++ ) {
+                balance += dataList.get(i).getValue();
+            }
+        }
+
+        return balance;
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    private class MoneyData {
+        private final long time;
+        private final double value;
     }
 }

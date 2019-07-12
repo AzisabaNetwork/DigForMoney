@@ -16,12 +16,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
-import net.milkbowl.vault.economy.Economy;
-import net.milkbowl.vault.economy.EconomyResponse;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class EarnMoneyListener implements Listener {
 
-    private DigForMoney plugin;
+    private final DigForMoney plugin;
 
     private final HashMap<Player, ScoreboardDisplayer> boardMap = new HashMap<>();
 
@@ -46,6 +46,8 @@ public class EarnMoneyListener implements Listener {
             return;
         }
 
+        e.setDropItems(false);
+
         double value = DigForMoney.getPlugin().getMoneyConfig().getValue(e.getBlock().getType());
 
         if ( value <= 0 ) {
@@ -60,7 +62,7 @@ public class EarnMoneyListener implements Listener {
             return;
         }
 
-        boolean success = addMoney(p, value);
+        plugin.getMoneyAddTask().addMoneyToTask(p.getUniqueId(), value);
 
         ScoreboardDisplayer disp;
         if ( boardMap.containsKey(p) ) {
@@ -69,11 +71,7 @@ public class EarnMoneyListener implements Listener {
             disp = new ScoreboardDisplayer(p);
         }
 
-        if ( success ) {
-            disp.addMoney(value);
-        } else {
-            disp.addError();
-        }
+        disp.addMoney(value);
         disp.update();
 
         if ( !boardMap.containsKey(p) ) {
@@ -88,7 +86,7 @@ public class EarnMoneyListener implements Listener {
             return;
         }
 
-        if ( !DigForMoney.getPlugin().getNormalConfig().isEnabledWorld(e.getBlock().getWorld()) ) {
+        if ( !plugin.getNormalConfig().isEnabledWorld(e.getBlock().getWorld()) ) {
             return;
         }
 
@@ -115,7 +113,7 @@ public class EarnMoneyListener implements Listener {
             return;
         }
 
-        if ( !DigForMoney.getPlugin().getNormalConfig().isEnabledWorld(e.getBlock().getWorld()) ) {
+        if ( !plugin.getNormalConfig().isEnabledWorld(e.getBlock().getWorld()) ) {
             return;
         }
 
@@ -129,17 +127,5 @@ public class EarnMoneyListener implements Listener {
     private boolean isModifiedByPlayer(Player p, Block b) {
         // TODO 砂などの落下するブロックが対策できない
         return placeLocList.contains(b.getLocation()) || breakLocMap.getOrDefault(p, new ArrayList<>()).contains(b.getLocation());
-    }
-
-    private boolean addMoney(Player p, double value) {
-        Economy econ = DigForMoney.getEconomy();
-        EconomyResponse r = econ.depositPlayer(p, null, value);
-
-        if ( !r.transactionSuccess() ) {
-            plugin.getLogger().warning(p.getName() + "へのお金追加でエラー発生: " + r.errorMessage);
-            return false;
-        }
-
-        return true;
     }
 }

@@ -18,6 +18,8 @@ public class DigForMoney extends JavaPlugin {
     private static DigForMoney plugin;
     @Getter
     private static Economy economy;
+    @Getter
+    private MoneyAddTask moneyAddTask;
 
     @Override
     public void onEnable() {
@@ -31,10 +33,13 @@ public class DigForMoney extends JavaPlugin {
         moneyConfig = new MoneyConfig();
         moneyConfig.load();
 
+        moneyAddTask = new MoneyAddTask(this);
+        moneyAddTask.runTaskTimer(this, 20 * 5, 20 * 5);
+
         // moneyConfigとnormalConfigがgetDataFolder()出来なくなるのを防ぐために2回plugin = thisする
         plugin = this;
 
-        Bukkit.getPluginManager().registerEvents(new EarnMoneyListener(), this);
+        Bukkit.getPluginManager().registerEvents(new EarnMoneyListener(this), this);
 
         setupEconomy();
 
